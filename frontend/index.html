@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Astrologer</title>
+  <style>
+    :root { --bg:#0b0f17; --card:#121826; --text:#e6edf3; --muted:#9fb0c4; --accent:#8ab4ff; --warn:#fbbf24; --err:#f87171; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b0f17,#0d1220 30%,#0b0f17);color:var(--text)}
+    header{padding:24px 20px;text-align:center}
+    header h1{margin:0;font-size:28px}
+    header p{margin:6px 0 0;color:var(--muted)}
+    .container{max-width:980px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .card{background:var(--card);border:1px solid #1f2937;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .card h2{margin:0 0 12px;font-size:18px;color:#cde1ff}
+    label{display:block;margin:10px 0 6px;color:#b8c6dc;font-size:14px}
+    input,textarea,select{width:100%;padding:12px;border-radius:12px;border:1px solid #2a3345;background:#0c1424;color:var(--text);outline:none}
+    textarea{min-height:90px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .btn{margin-top:14px;background:var(--accent);border:none;color:#041021;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600}
+    .btn.secondary{background:#1f2937;color:#cfe3ff;border:1px solid #314057}
+    .output{white-space:pre-wrap;line-height:1.55}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#132236;border:1px solid #2d3e57;font-size:12px;color:#a7c1ff;margin-right:8px}
+    .small{font-size:12px;color:var(--muted)}
+    .hint{font-size:12px;color:#9fb0c4;margin-top:4px}
+    .err{font-size:12px;color:#f87171;margin-top:6px}
+    @media (max-width:900px){ .container{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔮 AI Astrologer</h1>
+    <p>Enter your birth details for a personalized reading, then ask one free question.</p>
+  </header>
+
+  <div class="container">
+    <section class="card">
+      <h2>Birth Details</h2>
+
+      <label for="name">Name</label>
+      <input id="name" placeholder="Your name" autocomplete="name"/>
+
+      <label>Date of Birth</label>
+      <div class="row-3">
+        <select id="dob-month" aria-label="Month">
+          <option value="" selected disabled>Month</option>
+        </select>
+        <select id="dob-day" aria-label="Day" disabled>
+          <option value="" selected disabled>Day</option>
+        </select>
+        <input id="dob-year" aria-label="Year" inputmode="numeric" pattern="\d{4}" placeholder="Year" maxlength="4" />
+      </div>
+      <div id="dob-msg" class="hint">Pick month, then day, then type 4-digit year.</div>
+
+      <div class="row">
+        <div>
+          <label for="tob">Time of Birth</label>
+          <input id="tob" type="time" />
+        </div>
+        <div>
+          <label for="pob">Place of Birth</label>
+          <input id="pob" placeholder="City, Country" />
+        </div>
+      </div>
+
+      <button class="btn" id="btn-generate">Get Reading</button>
+    </section>
+
+    <section class="card">
+      <h2>Your Reading</h2>
+      <div id="badges"></div>
+      <div id="reading" class="output">Fill your details and tap “Get Reading”.</div>
+    </section>
+
+    <section class="card">
+      <h2>Ask Your Free Question</h2>
+      <label>Question</label>
+      <textarea id="question" placeholder="e.g., What do the next 3 months look like for my career?"></textarea>
+      <button class="btn secondary" id="btn-ask">Ask</button>
+      <div id="qa" class="output" style="margin-top:10px;"></div>
+      <div id="limit-note" class="small" style="margin-top:6px;color:#9fb0c4;">You can ask one free question.</div>
+    </section>
+  </div>
+
+  <script>
+  const BACKEND_URL = "http://localhost:5001";
+  let freeQuestionUsed = false;
+
+  function lockQuestionUI(msg) {
+    const askBtn = document.getElementById("btn-ask");
+    const qArea = document.getElementById("question");
+    if (askBtn) askBtn.disabled = true;
+    if (qArea) {
+      qArea.disabled = true;
+      qArea.placeholder = msg || "Free question used.";
+    }
+    const note = document.getElementById("limit-note");
+    if (note) note.textContent = "Free question used.";
+  }
+
+  // ---------- DOB helpers ----------
+  const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  const dobMonth = document.getElementById("dob-month");
+  const dobDay   = document.getElementById("dob-day");
+  const dobYear  = document.getElementById("dob-year");
+  const dobMsg   = document.getElementById("dob-msg");
+
+  (function initMonths(){
+    monthNames.forEach(function(m, idx){
+      var opt = document.createElement("option");
+      opt.value = String(idx+1).padStart(2,"0");
+      opt.textContent = m;
+      dobMonth.appendChild(opt);
+    });
+  })();
+
+  function daysInMonth(month, year){
+    if(!year) year = 2000; // default for leap handling
+    return new Date(year, Number(month), 0).getDate();
+  }
+
+  function repopulateDays(preserve){
+    const previous = dobDay.value; // remember current selection
+    dobDay.innerHTML = "";
+    var ph = document.createElement("option");
+    ph.value = ""; ph.disabled = true; ph.selected = true; ph.textContent = "Day";
+    dobDay.appendChild(ph);
+
+    var mVal = dobMonth.value;
+    var yVal = parseInt(dobYear.value, 10);
+    if(!mVal){ dobDay.disabled = true; return; }
+    var count = daysInMonth(mVal, (isFinite(yVal) ? yVal : undefined));
+
+    var toSelect = null;
+    if (preserve && previous) {
+      // keep the previous day if still valid
+      var prevNum = parseInt(previous, 10);
+      if (prevNum >= 1 && prevNum <= count) toSelect = previous;
+    }
+
+    for(var d=1; d<=count; d++){
+      var opt = document.createElement("option");
+      var val = String(d).padStart(2,"0");
+      opt.value = val;
+      opt.textContent = d;
+      if (toSelect && val === toSelect) opt.selected = true;
+      dobDay.appendChild(opt);
+    }
+    dobDay.disabled = false;
+  }
+
+  dobMonth.addEventListener("change", function(){
+    repopulateDays(true); // preserve day if valid when month changes
+    dobMsg.textContent = "Select day, then type 4-digit year.";
+    dobMsg.className = "hint";
+  });
+
+  dobYear.addEventListener("input", function(){
+    dobYear.value = dobYear.value.replace(/\D/g,"").slice(0,4);
+    repopulateDays(true); // preserve day if valid when year changes
+  });
+
+  function assembleDobISO(){
+    var m = dobMonth.value;
+    var d = dobDay.value;
+    var y = dobYear.value;
+    var nowYear = new Date().getFullYear();
+
+    if(!m || !d || !y){ setDobError("Please complete Month, Day, and 4-digit Year."); return null; }
+    if(y.length !== 4){ setDobError("Year must be 4 digits."); return null; }
+    var yearNum = parseInt(y, 10);
+    if(!(yearNum >= 1900 && yearNum <= nowYear)){
+      setDobError("Year must be between 1900 and " + nowYear + ".");
+      return null;
+    }
+    if(parseInt(d,10) > daysInMonth(m, yearNum)){
+      setDobError("That day does not exist for the selected month/year.");
+      return null;
+    }
+    clearDobMsg();
+    return y + "-" + m + "-" + d; // YYYY-MM-DD
+  }
+  function setDobError(msg){ dobMsg.textContent = msg; dobMsg.className = "err"; }
+  function clearDobMsg(){ dobMsg.textContent = "Looks good."; dobMsg.className = "hint"; }
+
+  // ---------- Badges ----------
+  function mkBadge(text){
+    var b = document.createElement("span");
+    b.className = "pill";
+    b.textContent = text;
+    return b;
+  }
+  function setBadges(obj){
+    var el = document.getElementById("badges");
+    el.innerHTML = "";
+    if(!obj) return;
+    var sign = obj.sign, element = obj.element, modality = obj.modality, diurnal = obj.diurnal;
+    if(sign) el.appendChild(mkBadge(sign));
+    if(element) el.appendChild(mkBadge(element));
+    if(modality) el.appendChild(mkBadge(modality));
+    if(diurnal) el.appendChild(mkBadge(diurnal));
+  }
+
+  // ---------- Actions ----------
+  document.getElementById("btn-generate").addEventListener("click", generateReading);
+  document.getElementById("btn-ask").addEventListener("click", ask);
+
+  async function generateReading(){
+    var dobISO = assembleDobISO();
+    if(!dobISO) return;
+
+    var payload = {
+      name: document.getElementById("name").value.trim(),
+      dob: dobISO,
+      tob: document.getElementById("tob").value,
+      pob: document.getElementById("pob").value.trim()
+    };
+    var readingEl = document.getElementById("reading");
+    readingEl.textContent = "Generating...";
+
+    try{
+      var res = await fetch(BACKEND_URL + "/api/reading", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json();
+      if(!res.ok){ readingEl.textContent = data.error || "Something went wrong."; return; }
+      setBadges(data);
+      readingEl.textContent = data.reading + (data.fallback ? "\n\n(Generated with fallback.)" : "");
+    }catch(err){
+      readingEl.textContent = "Please check your connection.";
+    }
+  }
+
+  async function ask(){
+    if (freeQuestionUsed) {
+      lockQuestionUI("Free question used.");
+      var qaEl1 = document.getElementById("qa");
+      qaEl1.textContent = "You can only ask one free question.";
+      return;
+    }
+
+    var dobISO = assembleDobISO();
+    if(!dobISO) return;
+
+    var payload = {
+      name: document.getElementById("name").value.trim(),
+      dob: dobISO,
+      tob: document.getElementById("tob").value,
+      question: document.getElementById("question").value.trim()
+    };
+
+    if (!payload.question) {
+      const qaEl0 = document.getElementById("qa");
+      qaEl0.textContent = "Please enter your question.";
+      return;
+    }
+
+    var qaEl = document.getElementById("qa");
+    qaEl.textContent = "Thinking...";
+
+    try{
+      var res = await fetch(BACKEND_URL + "/api/qa", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json();
+
+      if (res.status === 403 && data && data.limit_reached) {
+        freeQuestionUsed = true;
+        lockQuestionUI("Free question used.");
+        qaEl.textContent = "You can only ask one free question.";
+        return;
+      }
+
+      if(!res.ok){
+        qaEl.textContent = (data && data.error) ? data.error : "Something went wrong.";
+        return;
+      }
+
+      freeQuestionUsed = true;
+      lockQuestionUI("Free question used.");
+      setBadges(data);
+      qaEl.textContent = "🔎 " + payload.question + "\n\n💬 " + data.answer + (data.fallback ? "\n\n(Used fallback.)" : "");
+
+    }catch(err){
+      qaEl.textContent = "Please check your connection.";
+    }
+  }
+  </script>
+</body>
+</html>
