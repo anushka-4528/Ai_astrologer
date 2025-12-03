@@ -1,0 +1,457 @@
+============================================================
+SOFTWARE ENGINEERING LAB — COMPLETE REVISION SHEET
+(All Commands • All Steps • All Procedures • No Installation)
+============================================================
+
+
+============================================================
+1) GIT — COMPLETE WORKFLOW & COMMANDS
+============================================================
+
+------------------------------------------------------------
+A) REPOSITORY INITIALIZATION & FIRST PUSH
+------------------------------------------------------------
+git init
+git status
+git add .
+git commit -m "initial commit"
+git branch -M main
+git remote add origin <repo-url>
+git push -u origin main
+
+------------------------------------------------------------
+B) CLONE / FETCH / PULL / CHECKOUT
+------------------------------------------------------------
+git clone <repo-url>
+git pull
+git fetch origin
+git fetch --all
+git checkout <branch-name>
+git checkout -b <new-branch>
+
+------------------------------------------------------------
+C) WORKING WITH BRANCHES
+------------------------------------------------------------
+git branch
+git branch feature/<feature-name>
+git checkout feature/<feature-name>
+git merge feature/<feature-name>
+git push origin feature/<feature-name>
+
+------------------------------------------------------------
+D) DISCARDING / RESETTING CHANGES
+------------------------------------------------------------
+git restore <file>
+git restore .
+git reset HEAD <file>          (unstage but keep changes)
+git reset --hard               (discard everything)
+
+------------------------------------------------------------
+E) STASHING
+------------------------------------------------------------
+git stash
+git stash apply
+git stash pop
+git stash list
+
+------------------------------------------------------------
+F) PUSHING AFTER NON-FAST-FORWARD ERROR
+------------------------------------------------------------
+git pull --rebase origin <branch-name>
+# resolve conflicts if needed
+git push
+
+------------------------------------------------------------
+G) DELETE LOCAL & REMOTE BRANCH
+------------------------------------------------------------
+git branch -d feature/<name>
+git branch -D feature/<name>
+git push origin --delete feature/<name>
+
+------------------------------------------------------------
+H) CHANGE REMOTE URL
+------------------------------------------------------------
+git remote set-url origin <new-url>
+
+------------------------------------------------------------
+I) REMOVE A FILE ACCIDENTALLY COMMITTED
+------------------------------------------------------------
+git rm --cached <file>
+git commit -m "remove sensitive file"
+git push
+
+------------------------------------------------------------
+J) LOG & HISTORY
+------------------------------------------------------------
+git log
+git log --oneline --graph --decorate
+git diff
+git blame <file>
+
+------------------------------------------------------------
+K) PUSH TO DIFFERENT REMOTE
+------------------------------------------------------------
+git remote add neworigin <repo-url>
+git push neworigin main
+
+
+============================================================
+2) COLLABORATIVE CODING USING GIT (TEAM WORKFLOW)
+============================================================
+
+------------------------------------------------------------
+A) STANDARD TEAM WORKFLOW
+------------------------------------------------------------
+# Developer 1 creates ORG → Creates repository
+# Other developers added as collaborators
+git clone <repo-url>
+git checkout -b feature/<task>
+git add .
+git commit -m "<work>"
+git push origin feature/<task>
+# Open Pull Request
+# Wait for review + merge to main
+
+------------------------------------------------------------
+B) RESOLVE MERGE CONFLICTS
+------------------------------------------------------------
+git pull origin main
+# Open conflicting files
+# Edit around <<<<<<< ======= >>>>>> markers
+git add .
+git commit
+git push
+
+------------------------------------------------------------
+C) PATCH CREATION AND APPLYING
+------------------------------------------------------------
+# Create patch
+git format-patch -1 <commit-hash>
+# Apply patch
+git apply <patch-file>
+
+
+============================================================
+3) MAVEN — PROJECT BUILDING & PACKAGING
+============================================================
+
+------------------------------------------------------------
+A) BASIC BUILD COMMANDS
+------------------------------------------------------------
+mvn clean
+mvn compile
+mvn test
+mvn package
+mvn install
+mvn deploy
+
+------------------------------------------------------------
+B) STRUCTURE (IMPORTANT FOLDERS)
+------------------------------------------------------------
+src/main/java       → main Java code
+src/test/java       → unit tests
+src/main/resources  → configuration
+target/             → build output (.jar/.war)
+
+------------------------------------------------------------
+C) ADDING DEPENDENCIES (POM.XML)
+------------------------------------------------------------
+<dependencies>
+    <dependency>
+        <groupId>group</groupId>
+        <artifactId>artifact</artifactId>
+        <version>version</version>
+    </dependency>
+</dependencies>
+
+------------------------------------------------------------
+D) PARENT + MULTI-MODULE MAVEN PROJECT
+------------------------------------------------------------
+Parent POM has:
+<packaging>pom</packaging>
+<modules>
+    <module>module1</module>
+    <module>module2</module>
+</modules>
+
+Build complete project:
+mvn clean install
+
+------------------------------------------------------------
+E) GENERATING EXECUTABLE JAR
+------------------------------------------------------------
+mvn clean package
+# Run JAR
+java -jar target/<name>.jar
+
+
+============================================================
+4) DOCKER — COMPLETE COMMANDS & WORKFLOWS
+============================================================
+
+------------------------------------------------------------
+A) IMAGE & CONTAINER ESSENTIALS
+------------------------------------------------------------
+docker pull <image>
+docker images
+docker run -it --name <container> -p <host-port>:<container-port> <image>
+docker start <container>
+docker stop <container>
+docker rm <container>
+docker ps
+docker ps -a
+docker inspect <container>
+docker logs <container>
+
+------------------------------------------------------------
+B) EXECUTE COMMAND INSIDE A CONTAINER
+------------------------------------------------------------
+docker exec -it <container> bash
+
+------------------------------------------------------------
+C) CREATE IMAGE FROM CONTAINER
+------------------------------------------------------------
+docker commit <container> <new-image>
+
+------------------------------------------------------------
+D) BUILD IMAGE USING DOCKERFILE
+------------------------------------------------------------
+docker build -t <image-name> .
+
+------------------------------------------------------------
+E) SAVE & LOAD IMAGE
+------------------------------------------------------------
+docker save <image> > file.tar
+docker load < file.tar
+
+
+============================================================
+5) DOCKER-COMPOSE — MULTI-CONTAINER SERVICES
+============================================================
+
+------------------------------------------------------------
+A) START / STOP COMPOSE
+------------------------------------------------------------
+docker-compose up -d
+docker-compose down
+docker-compose ps
+docker-compose logs
+
+------------------------------------------------------------
+B) REBUILD SERVICES
+------------------------------------------------------------
+docker-compose up --build
+
+------------------------------------------------------------
+C) WORDPRESS + MYSQL TEMPLATE (REFERENCE)
+------------------------------------------------------------
+# docker-compose.yml includes 2 services (WordPress + MySQL)
+# Run deployment
+docker-compose up -d
+
+
+============================================================
+6) FLASK APP DEPLOYMENT USING DOCKER + COMPOSE
+============================================================
+# app.py, Dockerfile, docker-compose.yml in same directory
+docker compose up --build
+# Access Flask app in browser using exposed port
+
+
+============================================================
+7) JENKINS — FREESTYLE JOBS (MAVEN CI PIPELINE)
+============================================================
+
+------------------------------------------------------------
+A) MAVEN JAVA PROJECT JOB
+------------------------------------------------------------
+Source Code Management → Git repo URL
+Build Step →
+  Maven version = MAVEN_HOME
+  Goals = clean
+Add another Build Step →
+  Goals = install
+Post-Build Action →
+  Archive the artifacts → **/*
+Post-Build Action →
+  Build other projects → MavenJava_Test
+
+------------------------------------------------------------
+B) MAVEN TEST JOB
+------------------------------------------------------------
+Delete workspace before build → Enabled
+Build Step →
+  Copy artifacts from MavenJava
+  Artifacts = **/*
+Post-Build →
+  Archive artifacts → **/*
+
+
+============================================================
+8) JENKINS — MAVEN WEB AUTOMATION (BUILD → TEST → DEPLOY)
+============================================================
+
+------------------------------------------------------------
+A) JOB 1: MavenWeb_Build
+------------------------------------------------------------
+SCM: Git repo
+Build Steps:
+  mvn clean
+  mvn install
+Post-Build:
+  Archive artifacts → **/*
+  Trigger other projects → MavenWeb_Test
+
+------------------------------------------------------------
+B) JOB 2: MavenWeb_Test
+------------------------------------------------------------
+Env:
+  Delete workspace before build
+Build Steps:
+  Copy artifacts from MavenWeb_Build
+  mvn test
+Post-Build:
+  Archive artifacts → **/*
+  Trigger → MavenWeb_Deploy (only if stable)
+
+------------------------------------------------------------
+C) JOB 3: MavenWeb_Deploy
+------------------------------------------------------------
+Build Step:
+  Copy artifacts from MavenWeb_Test
+Post-Build:
+  Deploy WAR/EAR to container
+  WAR = **/*.war
+  Context path = webpath
+  Provide Tomcat URL + Credentials
+
+
+============================================================
+9) JENKINS — SCRIPTED PIPELINE
+============================================================
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') { steps { git '<repo-url>' } }
+        stage('Build')    { steps { sh 'mvn clean install' } }
+        stage('Test')     { steps { sh 'mvn test' } }
+        stage('Archive')  { steps { archiveArtifacts artifacts: "**/*" } }
+    }
+}
+
+
+============================================================
+10) JENKINS — CI/CD USING GITHUB WEBHOOKS
+============================================================
+
+------------------------------------------------------------
+TRIGGER BUILD ON PUSH
+------------------------------------------------------------
+Jenkins Job → Configure:
+Build Triggers → “GitHub hook trigger for GITScm polling”
+
+GitHub → Repository → Settings → Webhooks:
+Payload URL:
+<ngrok-forwarding-url>/github-webhook/
+Content type → application/json
+Event → Push
+
+Push commit → Jenkins builds automatically
+
+
+============================================================
+11) JENKINS — EMAIL NOTIFICATIONS
+============================================================
+Post-Build Action:
+Editable Email Notification
+Project Recipient List → <email(s)>
+Trigger → Failure / Success
+(Optional) Attach logs or reports
+
+
+============================================================
+12) KUBERNETES USING MINIKUBE
+============================================================
+
+------------------------------------------------------------
+A) START CLUSTER
+------------------------------------------------------------
+minikube start
+minikube status
+
+------------------------------------------------------------
+B) DEPLOY NGINX POD
+------------------------------------------------------------
+kubectl run nginx --image=nginx
+
+------------------------------------------------------------
+C) EXPOSE POD
+------------------------------------------------------------
+kubectl expose pod nginx --type=NodePort --port=80
+
+------------------------------------------------------------
+D) CHECK SERVICES / PODS
+------------------------------------------------------------
+kubectl get pods
+kubectl get svc
+kubectl describe svc nginx
+
+------------------------------------------------------------
+E) OPEN IN BROWSER
+------------------------------------------------------------
+minikube service nginx --url
+
+
+============================================================
+13) AWS EC2 — WEB APPLICATION DEPLOYMENT WITH DOCKER
+============================================================
+
+------------------------------------------------------------
+A) CONNECT TO INSTANCE
+------------------------------------------------------------
+ssh -i <key.pem> ubuntu@<public-ip>
+
+------------------------------------------------------------
+B) CLONE PROJECT
+------------------------------------------------------------
+git clone <repo-with-dockerfile>
+cd <project>
+
+------------------------------------------------------------
+C) BUILD & RUN
+------------------------------------------------------------
+sudo docker build -t img1 .
+sudo docker run -d -p 8081:8080 img1
+
+------------------------------------------------------------
+D) VIEW APP
+------------------------------------------------------------
+<public-ip>:8081
+
+
+============================================================
+UML — THEORY REQUIRED FOR EXAMS
+============================================================
+
+------------------------------------------------------------
+SEQUENCE DIAGRAM (WHAT IT SHOWS)
+------------------------------------------------------------
+• Movement of messages between objects in time order
+• Lifelines + activation bars + synchronous and asynchronous messages
+
+------------------------------------------------------------
+CLASS DIAGRAM (WHAT IT SHOWS)
+------------------------------------------------------------
+• System structure
+• Classes, attributes, operations, associations, generalization, composition
+
+------------------------------------------------------------
+COMPONENT DIAGRAM (WHAT IT SHOWS)
+------------------------------------------------------------
+• Logical system modules and dependencies
+• Components + interfaces + ports + connectors
+
+
+============================================================
+END OF SOFTWARE ENGINEERING LAB COMPLETE REVISION SHEET
+============================================================

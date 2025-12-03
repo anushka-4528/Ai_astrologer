@@ -1,3 +1,397 @@
+email password:qooo vcwz ssbn xpgu
+
+==============================
+ GLOBAL GIT CONFIGURATION
+==============================
+
+# Set Git username
+git config --global user.name "Your Name"
+
+# Set Git email
+git config --global user.email "you@example.com"
+
+# Check config
+git config --global --list
+
+==============================
+ CONNECT LOCAL → REMOTE
+==============================
+
+# Initialize Git in local folder
+git init
+
+# Add remote repo
+git remote add origin https://github.com/user/repo.git
+
+# Verify remote
+git remote -v
+
+# Push first commit to GitHub
+git push -u origin main
+
+==============================
+ PUSH TO GITHUB PUBLIC REPO
+==============================
+
+git add .
+git commit -m "msg"
+git push origin branch-name
+
+==============================
+ FIX: NON-FAST-FORWARD ERROR
+==============================
+
+# Remote has new commits — fix with rebase
+git pull --rebase origin <branch>
+git push origin <branch>
+
+==============================
+ PUSH FEATURE BRANCH SAFELY
+==============================
+
+# Create and switch
+git checkout -b feature/feat-1
+
+# Push without affecting main
+git push origin feature/feat-1
+
+
+==============================
+ FETCH LATEST REMOTE CHANGES
+==============================
+
+git fetch origin
+git checkout new-branch-name   # switch to any fetched branch
+
+==============================
+ AVOID MERGE CONFLICTS WHEN PULLING
+==============================
+
+git stash                    # save your changes
+git pull --rebase origin main
+git stash pop                # reapply your changes
+
+==============================
+ REMOVE SENSITIVE FILES
+==============================
+
+git rm --cached path/to/file
+git commit -m "Remove sensitive file"
+git push origin main
+
+# (If history contains secrets)
+git filter-branch --force --index-filter \
+"git rm --cached --ignore-unmatch path/to/file" \
+--prune-empty --tag-name-filter cat -- --all
+
+git push --force
+
+==============================
+ UPDATE FEATURE BRANCH WITH MAIN
+==============================
+
+# Option 1: Rebase
+git checkout feature/your-feature
+git fetch origin
+git rebase origin/main
+
+# Option 2: Merge
+git merge origin/main
+
+==============================
+ CHANGE REMOTE REPOSITORY
+==============================
+
+# Replace old remote
+git remote set-url origin https://github.com/new/repo.git
+
+# Push to new repo
+git push -u origin branch-name
+
+==============================
+ UPDATE LOCAL BRANCH WITHOUT LOSING WORK
+==============================
+
+git stash
+git pull --rebase origin branch-name
+git stash pop
+
+==============================
+ RESOLVE MERGE CONFLICTS
+==============================
+
+git pull origin branch-name
+
+# Resolve conflict markers in files:
+# <<<<<<< HEAD
+# =======
+# >>>>>>> remote
+
+git add .
+git commit
+
+==============================
+ DELETE REMOTE BRANCH
+==============================
+
+git push origin --delete feature/branch-name
+
+==============================
+ DELETE LOCAL BRANCH
+==============================
+
+git branch -d branch-name         # safe delete
+git branch -D branch-name         # force delete
+
+==============================
+ CREATE & SWITCH BRANCHES
+==============================
+
+git branch                         # list
+git checkout -b feature/login      # create + switch
+git checkout main                  # switch
+
+==============================
+ DISCARD CHANGES / UNSTAGE
+==============================
+
+# Discard modified file
+git checkout -- file.txt
+
+# Unstage a file
+git reset HEAD file.txt
+
+# Undo last commit (keep changes)
+git reset --soft HEAD~1
+
+# Undo last commit (discard changes)
+git reset --hard HEAD~1
+
+==============================
+ GIT FORK WORKFLOW
+==============================
+
+# Clone your fork
+git clone https://github.com/yourname/repo.git
+
+# Add original (upstream) repo
+git remote add upstream https://github.com/original/repo.git
+
+# Fetch updates from upstream
+git fetch upstream
+
+# Update your main branch
+git checkout main
+git merge upstream/main
+
+# Push to your fork
+git push origin main
+
+==============================
+ CREATE A PULL REQUEST (PR)
+==============================
+
+# Push your feature branch
+git push origin feature/my-feature
+
+# Go to GitHub → Open Pull Request
+
+
+
+
+
+
+==============================
+ STEP 1: Pull Ubuntu Image
+==============================
+
+docker pull ubuntu:latest
+
+==============================
+ STEP 2: Run Container
+==============================
+
+docker run -it -d --name myubuntu -p 3000:80 ubuntu
+docker exec -it myubuntu bash
+
+==============================
+ STEP 3: Install NGINX
+==============================
+
+apt update
+apt install nginx -y
+service nginx start
+
+==============================
+ STEP 4: Modify index.html
+==============================
+
+cd /var/www/html
+nano index.html   # Edit <h1> tag content
+
+==============================
+ STEP 5: View Page in Browser
+==============================
+
+Open: http://localhost:3000
+
+2️⃣ DOCKER IMAGE CREATION
+
+# STEP 1: Create a container
+docker run -it --name imgsource ubuntu
+
+# STEP 2: After modifying the container
+docker commit imgsource myubuntuimage:v1
+
+# STEP 3: Create Dockerfile
+touch Dockerfile
+nano Dockerfile
+
+FROM ubuntu
+RUN apt update && apt install nginx -y
+COPY index.html /var/www/html/index.html
+CMD ["nginx", "-g", "daemon off;"]
+
+# STEP 4: Build image
+docker build -t mynginximage:v1 .
+
+# STEP 5: Check images
+docker images
+
+3️⃣ DOCKER COMPOSE (RUNNING TWO SERVERS)
+
+==============================
+ STEP 1: docker-compose.yml
+==============================
+
+version: '3'
+services:
+  server1:
+    image: nginx
+    ports:
+      - "3001:80"
+
+  server2:
+    image: nginx
+    ports:
+      - "3002:80"
+
+==============================
+ STEP 2: Start Servers
+==============================
+
+docker-compose up -d
+
+==============================
+ STEP 3: Stop Containers
+==============================
+
+docker-compose down
+
+==============================
+ STEP 4: View in Browser
+==============================
+
+http://localhost:3001
+http://localhost:3002
+
+4️⃣ WORDPRESS + MYSQL USING COMPOSE
+
+==============================
+ STEP 1: docker-compose.yml
+==============================
+
+version: '3'
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+      WORDPRESS_DB_NAME: wordpress
+
+volumes:
+  db_data:
+
+==============================
+ STEP 2: Start Services
+==============================
+
+docker-compose up -d
+
+==============================
+ STEP 3: Access WordPress
+==============================
+
+http://localhost:8080
+
+5️⃣ FLASK APP (Dockerfile + Compose)
+
+STEP 1: Create folder
+--------------------
+mkdir flask-app
+cd flask-app
+--------------------
+STEP 2: Create app.py
+--------------------
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "<h1>Hello from Docker + Flask!</h1>"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+----------------------
+Create Dockerfile
+-----------------------
+
+FROM python:3.9
+
+WORKDIR /app
+
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
+COPY . .
+
+CMD ["python", "app.py"]
+
+----------------------
+flask
+----------------------
+version: '3'
+services:
+  flaskapp:
+    build: .
+    ports:
+      - "5000:5000"
+---------------------
+docker compose up --build
+------------------------
+http://localhost:5000
+
+
+
+
+
+
 Jenkins SE Lab – Complete Tasks
 1. Initial Setup (Tools & Configuration)
 Configure JDK
