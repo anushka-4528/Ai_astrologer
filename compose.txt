@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: wp_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootpass}"
+      MYSQL_DATABASE: "${DB_NAME:-wordpress}"
+      MYSQL_USER: "${DB_USER:-wpuser}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-wppass}"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wpnet
+
+  wordpress:
+    image: wordpress:6.4-apache
+    container_name: wp_app
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: "${DB_USER:-wpuser}"
+      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD:-wppass}"
+      WORDPRESS_DB_NAME: "${DB_NAME:-wordpress}"
+      WORDPRESS_TABLE_PREFIX: "wp_"
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      - wpnet
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: wp_phpmyadmin
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: "${DB_USER:-wpuser}"
+      PMA_PASSWORD: "${DB_PASSWORD:-wppass}"
+    networks:
+      - wpnet
+
+volumes:
+  db_data:
+  wp_data:
+
+networks:
+  wpnet:
+    driver: bridge
+
+
+-------------mk dir-------------
+mkdir wp-docker && cd wp-docker
+nano docker-compose.yaml
+-----------version---------------
+docker --version
+docker compose version
+docker compose ps
+docker compose logs -f wordpress
+docker compose logs -f db
+docker compose down
+docker compose down -v
+docker compose pull
+docker compose up -d --force-recreate --build
+
+
