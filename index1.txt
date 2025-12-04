@@ -405,6 +405,16 @@ minikube service nginx --url
 ============================================================
 13) AWS EC2 — WEB APPLICATION DEPLOYMENT WITH DOCKER
 ============================================================
+AWS
+
+sudo apt update
+sudo apt-get install docker.io
+sudo apt install git
+Sudo apt install nano
+git clone <copied http url>
+cd AWS (Navigate to folder in repo)
+sudo docker build –t mywebapp 
+sudo docker run –d –p 80:80 mywebapp
 
 ------------------------------------------------------------
 A) CONNECT TO INSTANCE
