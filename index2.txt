@@ -1,0 +1,161 @@
+KUBERNETES USING MINIKUBE
+
+
+1. open powershell
+2. minikube start
+3. kubectl create deployment mynginx --image=nginx
+4. kubectl get pods 
+5. kubectl expose deployment mynginx --type=NodePort --port=80 --target-port=80
+6. kubectl scale deployment mynginx --replicas=4
+7. kubectl port-forward svc/mynginx 8081:80
+
+OPEN http://localhost:8081
+kubectl describe pods
+
+8. kubectl delete deployment mynginx
+9. kubectl delete service mynginx
+10. minikube stop
+
+
+AGIOS
+
+1. docker pull jasonrivers/nagios:latest
+2. docker run --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+
+OPEN http://localhost:8888
+
+Login:
+username: nagiosadmin
+password: nagios
+
+3. docker stop nagiosdemo
+
+
+AWS
+
+sudo apt update
+sudo apt-get install docker.io
+sudo apt install git
+Sudo apt install nano
+git clone <copied http url>
+cd AWS (Navigate to folder in repo)
+sudo docker build –t mywebapp 
+sudo docker run –d –p 80:80 mywebapp
+
+Maven java
+org.apache.maven
+maven-archetype-quickstart 1.4
+Users/name/eclipse-workspace
+
+maven-archetype-webapp 1.4
+
+
+
+<tomcat-users>
+<role rolename="manager-script"/>
+<user username="admin" password="1234" roles="manager-script"/>
+</tomcat-users>
+
+FROM tomcat:9.0
+RUN rm -rf /usr/local/tomcat/webapps/*
+COPY target/*.war /usr/local/tomcat/webapps/ROOT.war
+CMD ["catalina.sh","run"]
+
+pipeline{
+    agent any
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/nikhileshnilagiri/maven-java-app'
+            }
+        }
+
+        stage('Clean') {
+            steps {
+                bat "mvn clean"
+            }
+        }
+
+        stage('Install') {
+            steps {
+                bat "mvn install"
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat "mvn test"
+            }
+        }
+    }
+    post{
+        success{
+            emailext body: 'This is a sample to test through the pipeline', subject: 'Build Success', to: 'nikhileshnilagiri2006@gmail.com'
+        }
+        failure{
+            emailext body: 'This is a sample to test through the pipeline', subject: 'Build failure', to: 'nikhileshnilagiri2006@gmail.com'
+        }
+    }
+}
+
+
+
+
+
+pipeline{
+    agent any
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/nikhileshnilagiri/maven-web-app'
+            }
+        }
+
+        stage('Clean') {
+            steps {
+                bat "mvn clean"
+            }
+        }
+
+        stage('Install') {
+            steps {
+                bat "mvn install"
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat "mvn test"
+            }
+        }
+        stage('deployment'){
+            steps{
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: '92ea1533-cb15-4f40-a28b-ddcd2418727f', path: '', url: 'http://localhost:8081/')], contextPath: null, war: '**/*.war'
+            }
+        }
+    }
+    post{
+        success{
+            emailext body: 'This is a sample to test through the pipeline', subject: 'Build Success', to: 'nikhileshnilagiri2006@gmail.com'
+        }
+        failure{
+            emailext body: 'This is a sample to test through the pipeline', subject: 'Build failure', to: 'nikhileshnilagiri2006@gmail.com'
+        }
+    }
+}
+
+
+minikube start --driver=docker
+kubectl create deployment mynginx --image=nginx
+kubectl set image deployment/myngnix nginx=nginx:latest
+kubectl get deployments
+kubectl expose deployment mynginx --type=NodePort --port=80 --target-port=80
+kubectl scale deployment mynginx --replicas=4
+kubectl port-forward svc/mynginx 8081:80
+if Error:
+minikube tunnel
+minikube service mynginx –url
+kubectl delete deployment mynginx
+kubectl delete service mynginx
+
+docker pull jasonrivers/nagios:latest
